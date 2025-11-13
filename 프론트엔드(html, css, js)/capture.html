@@ -1,121 +1,159 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8">
-<title>촬영 화면</title>
-<style>
-body { 
-    background:#000; 
-    color:white; 
-    text-align:center; 
-    font-family:"Noto Sans KR", sans-serif; 
-}
-video, #preview img { 
-    width:300px; 
-    border-radius:10px; 
-    transition: 0.5s all;
-}
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover" />
+  <title>Capture</title>
+  <style>
+    :root{
+      --shutter: 56px;   /* 동그라미 크기 */
+      --gap-bottom: 14px;/* 바닥↔동그라미 간격 (유지) */
+      --gap-top: 8px;    /* 가로선↔동그라미 간격 */
+      --line-h: 1px;
+    }
 
-/* preview div 안의 이미지 테두리 스타일 */
-#preview img.video-neon {
-    box-shadow: 0 0 10px #0ff, 0 0 20px #0ff, 0 0 30px #0ff, 0 0 40px #0ff;
-    border: 2px solid #0ff;
-}
+    html,body{margin:0;height:100%;background:#000;color:#fff;overflow:hidden;font-family:system-ui,-apple-system,Segoe UI,Roboto,Apple SD Gothic Neo,'Noto Sans KR',sans-serif}
+    .preview{position:fixed;inset:0;overflow:hidden;background:#000}
+    #camera{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}
 
-button { 
-    margin:10px; 
-    padding:10px 20px; 
-    cursor:pointer; 
-    font-size:16px; 
-    border:none; 
-    border-radius:8px; 
-}
+    /* 하단 투명 오버레이 */
+    .controls{
+      position:absolute;left:0;right:0;bottom:0;
+      height: calc(var(--line-h) + var(--gap-top) + var(--shutter) + var(--gap-bottom) + env(safe-area-inset-bottom));
+      display:flex;align-items:flex-end;justify-content:center;
+      background:rgba(0,0,0,0.25);
+      border-top:1px solid #7fd3ff;
+      box-shadow:0 -2px 10px rgba(127,211,255,.4),0 -4px 18px rgba(127,211,255,.25),inset 0 1px 6px rgba(127,211,255,.25);
+      padding-bottom:calc(env(safe-area-inset-bottom) + var(--gap-bottom));
+      z-index:2;
+    }
+    .controls::before{
+      content:"";position:absolute;left:0;right:0;top:0;height:var(--line-h);
+      background:linear-gradient(90deg,transparent,rgba(255,255,255,.25),transparent);
+    }
 
-/* 중앙 카운트다운 숫자 스타일 */
-#countdown {
-    font-size:50px;
-    color:#0ff; /* 야광 청록색 */
-    margin-top:10px;
-    font-weight:bold;
-    text-shadow: 
-        0 0 5px #0ff,
-        0 0 10px #0ff,
-        0 0 15px #0ff,
-        0 0 20px #0ff;
-}
+    /* 셔터 버튼 */
+    .shutter{
+      position:relative;
+      width:var(--shutter);height:var(--shutter);
+      border-radius:50%;
+      background:rgba(127,211,255,0.12);
+      border:2px solid rgba(127,211,255,0.9);
+      box-shadow:
+        0 0 8px rgba(127,211,255,0.65),
+        0 0 18px rgba(127,211,255,0.35),
+        inset 0 0 12px rgba(127,211,255,0.18);
+      cursor:pointer;
+      -webkit-tap-highlight-color:transparent;
+      outline:none;
+    }
+    /* 안쪽 링 */
+    .shutter::after{
+      content:"";position:absolute;inset:5px;
+      border-radius:50%;
+      background:rgba(127,211,255,0.10);
+      border:2px solid rgba(127,211,255,0.5);
+      box-shadow:inset 0 0 10px rgba(127,211,255,0.25);
+      transition:box-shadow 0.2s ease, background 0.2s ease;
+    }
+    /* 클릭/촬영 시 안쪽 링 빛남 */
+    .shutter.inner-glow::after{ animation:innerPulse 0.6s ease-out; }
+    @keyframes innerPulse{
+      0%{ box-shadow: inset 0 0 10px rgba(127,211,255,.25), 0 0 0 0 rgba(127,211,255,0); background:rgba(127,211,255,.15); }
+      50%{ box-shadow: inset 0 0 18px rgba(127,211,255,.9), 0 0 12px 6px rgba(127,211,255,.45); background:rgba(127,211,255,.25); }
+      100%{ box-shadow: inset 0 0 10px rgba(127,211,255,.25), 0 0 0 0 rgba(127,211,255,0); background:rgba(127,211,255,.10); }
+    }
 
-/* video 야광 테두리 */
-.video-neon {
-    box-shadow: 0 0 10px #0ff, 0 0 20px #0ff, 0 0 30px #0ff, 0 0 40px #0ff;
-    border: 2px solid #0ff;
-}
-</style>
+    .shutter:active{transform:scale(0.96)}
+
+    canvas{display:none}
+    .msg{
+      position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+      background:rgba(0,0,0,.6);padding:12px 16px;border-radius:10px;
+      border:1px solid #7fd3ff;box-shadow:0 0 10px rgba(127,211,255,.5);
+      display:none;z-index:3;text-align:center;font-size:20px;font-weight:700;
+    }
+    .msg.show{display:block}
+  </style>
 </head>
 <body>
-<h1>촬영 화면</h1>
+  <div class="preview">
+    <video id="camera" autoplay playsinline muted></video>
+    <div id="message" class="msg">카메라 권한을 허용해주세요.</div>
 
-<video id="video" autoplay></video>
-<div id="countdown"></div>
-<div id="preview"></div>
+    <div class="controls">
+      <button class="shutter" id="shutterBtn" aria-label="촬영"></button>
+    </div>
+  </div>
 
-<button onclick="startCountdown()">5초 뒤 촬영</button>
-<button onclick="location.href='/select'">다음</button>
+  <canvas id="snapshot"></canvas>
 
-<script>
-let video = document.getElementById("video");
-let canvas = document.createElement("canvas");
-let countdownEl = document.getElementById("countdown");
-let previewDiv = document.getElementById("preview");
+  <script>
+    const video = document.getElementById('camera');
+    const snapCanvas = document.getElementById('snapshot');
+    const msg = document.getElementById('message');
+    const shutterBtn = document.getElementById('shutterBtn');
 
-// 카메라 접근
-navigator.mediaDevices.getUserMedia({video:{facingMode:"user"}})
-  .then(stream => video.srcObject = stream)
-  .catch(err => alert("카메라 접근 실패: " + err));
+    let counting = false;
 
-function startCountdown() {
-  let count = 5;
-  countdownEl.textContent = count;
-
-  // 반복 촬영 시 기존 야광 제거
-  video.classList.remove("video-neon");
-  if (previewDiv.firstChild) {
-      previewDiv.firstChild.classList.remove("video-neon");
-  }
-
-  let timer = setInterval(() => {
-    count--;
-    if (count > 0) {
-      countdownEl.textContent = count;
-    } else {
-      clearInterval(timer);
-      countdownEl.textContent = "";
-
-      // 카운트 완료 후 야광 효과 재적용
-      video.classList.add("video-neon");
-
-      capture();
+    async function startCamera(){
+      try{
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video:{ facingMode:{ ideal:'environment' } }, audio:false
+        });
+        video.srcObject = stream;
+        msg.classList.remove('show');
+      }catch(e){
+        msg.textContent = '카메라 권한을 허용해주세요.';
+        msg.classList.add('show');
+      }
     }
-  }, 1000);
-}
 
-function capture() {
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
-  canvas.getContext("2d").drawImage(video, 0, 0);
-  let image = canvas.toDataURL("image/jpeg");
+    function sleep(ms){ return new Promise(r=>setTimeout(r, ms)); }
 
-  // preview에 이미지 표시 + 야광 테두리 적용
-  previewDiv.innerHTML = `<img src="${image}" class="video-neon">`;
+    async function captureNow(){
+      const w = video.videoWidth, h = video.videoHeight;
+      if(!w || !h){
+        msg.textContent = '카메라 준비 중입니다.';
+        msg.classList.add('show');
+        return;
+      }
+      snapCanvas.width = w; snapCanvas.height = h;
+      const ctx = snapCanvas.getContext('2d');
+      ctx.save(); ctx.translate(w,0); ctx.scale(-1,1); ctx.drawImage(video,0,0,w,h); ctx.restore();
+      const link = document.createElement('a');
+      link.download = `capture_${Date.now()}.jpg`;
+      link.href = snapCanvas.toDataURL('image/jpeg', 0.92);
+      link.click();
+    }
 
-  // 서버에 업로드
-  fetch("/upload", {
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body: JSON.stringify({image})
-  }).then(res => {
-    if (res.ok) console.log("📸 사진 업로드 완료");
-  });
-}
-</script>
+    shutterBtn.onclick = async ()=>{
+      if(counting) return; // 중복 방지
+      counting = true;
+      shutterBtn.disabled = true;
+
+      // 눌렀을 때 살짝 빛나고(피드백) 카운트다운 시작
+      shutterBtn.classList.remove('inner-glow'); void shutterBtn.offsetWidth; shutterBtn.classList.add('inner-glow');
+
+      // 3초 카운트다운 표시
+      for(let s=5; s>0; s--){
+        msg.textContent = s.toString();
+        msg.classList.add('show');
+        await sleep(1000);
+      }
+      msg.classList.remove('show');
+
+      // 촬영 순간에도 한 번 더 빛나게
+      shutterBtn.classList.remove('inner-glow'); void shutterBtn.offsetWidth; shutterBtn.classList.add('inner-glow');
+
+      await captureNow();
+
+      shutterBtn.disabled = false;
+      counting = false;
+    };
+
+    window.addEventListener('load', startCamera);
+    document.addEventListener('touchmove', e => e.preventDefault(), { passive:false });
+  </script>
 </body>
 </html>

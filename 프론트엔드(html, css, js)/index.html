@@ -2,14 +2,176 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Try On!</title>
 <style>
-body { background:#000; color:white; text-align:center; font-family:"Noto Sans KR", sans-serif; }
-button { margin:10px; padding:10px 20px; cursor:pointer; font-size:16px; }
+/* --- Body --- */
+body { 
+    background: #ffffff; 
+    color: #333; 
+    text-align: center; 
+    font-family: "Noto Sans KR", sans-serif; 
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw; 
+    cursor: pointer; 
+}
+
+/* --- 문구 컨테이너 추가 --- */
+.title-container {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 5;
+}
+
+.handwritten-text {
+    font-family: 'Great Vibes', cursive; /* 우아한 만년필 느낌 폰트 */
+    font-size: 90px;
+    color: rgba(20, 20, 20, 0.9);
+    white-space: nowrap;
+    overflow: hidden;
+    border-right: none;
+    animation: drawText 4s ease forwards;
+    stroke-width: 1px;
+    text-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
+/* 손글씨처럼 써지는 애니메이션 */
+@keyframes drawText {
+    from {
+        width: 0;
+    }
+    to {
+        width: 100%;
+    }
+}
+
+/* 펜이 써나가는 듯한 부드러운 모션 */
+.handwritten-text {
+    display: inline-block;
+    white-space: nowrap;
+    animation: handwriting 5s ease-out forwards;
+    border: none;
+}
+
+@keyframes handwriting {
+    0% {
+        opacity: 0;
+        clip-path: inset(0 100% 0 0);
+    }
+    10% {
+        opacity: 1;
+    }
+    100% {
+        clip-path: inset(0 0 0 0);
+    }
+}
+
+/* --- 옷 배경 (기존 유지) --- */
+.clothing-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%; 
+    width: 100%;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+.clothing-row {
+    display: flex;
+    gap: 2vw;
+    position: absolute;
+    left: 0;
+    width: max-content;
+}
+
+.clothing-item {
+    height: 25vh; 
+    min-width: 25vh;
+    display: block; 
+    background: #ffffff;
+    overflow: hidden;
+}
+
+.clothing-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+    border: none;
+    transform: scale(0.8);
+    transition: transform 0s; /* 초기 확대 방지 */
+}
+
+/* --- Row Animation --- */
+.row-1 { animation: slideRight 30s linear infinite; top: 0%; }
+.row-2 { animation: slideLeft 35s linear infinite; top: 25%; }
+.row-3 { animation: slideRight 32s linear infinite; top: 50%; }
+.row-4 { animation: slideLeft 38s linear infinite; top: 75%; }
+
+@keyframes slideRight {
+    0% { transform: translateX(-50%); }
+    100% { transform: translateX(0); }
+}
+
+@keyframes slideLeft {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+}
 </style>
 </head>
-<body>
-<h1>Try On!</h1>
-<button onclick="location.href='/capture'">시작하기</button>
+
+<body onclick="location.href='capture.html'">
+
+<!-- 옷 배경 -->
+<div class="clothing-container">
+    <div class="clothing-row row-1">
+        <div class="clothing-item"><img src="images/Clothes (1).jpg"></div>
+        <div class="clothing-item"><img src="images/Clothes (2).jpg"></div>
+        <div class="clothing-item"><img src="images/Clothes (3).jpg"></div>
+        <div class="clothing-item"><img src="images/Clothes (4).jpg"></div>
+        <div class="clothing-item"><img src="images/Clothes (5).jpg"></div>
+        <div class="clothing-item"><img src="images/Clothes (1).jpg"></div>
+        <div class="clothing-item"><img src="images/Clothes (2).jpg"></div>
+    </div>
+
+    <div class="clothing-row row-2">
+        <div class="clothing-item"><img src="images/Clothes (6).jpg"></div>
+        <div class="clothing-item"><img src="images/Clothes (7).jpg"></div>
+        <div class="clothing-item"><img src="images/Clothes (8).jpg"></div>
+        <div class="clothing-item"><img src="images/Clothes (9).jpg"></div>
+        <div class="clothing-item"><img src="images/Clothes (10).jpg"></div>
+        <div class="clothing-item"><img src="images/Clothes (6).jpg"></div>
+    </div>
+
+    <div class="clothing-row row-3">
+        <div class="clothing-item"><img src="images/Clothes (11).jpg"></div>
+        <div class="clothing-item"><img src="images/Clothes (12).jpg"></div>
+        <div class="clothing-item"><img src="images/Clothes (13).jpg"></div>
+        <div class="clothing-item"><img src="images/Clothes (14).jpg"></div>
+        <div class="clothing-item"><img src="images/Clothes (15).jpg"></div>
+        <div class="clothing-item"><img src="images/Clothes (11).jpg"></div>
+    </div>
+
+    <div class="clothing-row row-4">
+        <div class="clothing-item"><img src="images/Clothes (16).jpg"></div>
+        <div class="clothing-item"><img src="images/Clothes (17).jpg"></div>
+        <div class="clothing-item"><img src="images/Clothes (18).jpg"></div>
+        <div class="clothing-item"><img src="images/Clothes (19).jpg"></div>
+        <div class="clothing-item"><img src="images/Clothes (20).jpg"></div>
+        <div class="clothing-item"><img src="images/Clothes (16).jpg"></div>
+    </div>
+</div>
+
+<!-- 손글씨 텍스트 -->
+<div class="title-container">
+    <h1 class="handwritten-text">Style On You</h1>
+</div>
+
 </body>
 </html>
