@@ -4,6 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Try On!</title>
+
+<!-- 부드러운 폰트: Pretendard -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+
 <style>
 /* --- Body --- */
 body { 
@@ -29,7 +33,7 @@ body {
 }
 
 .handwritten-text {
-    font-family: 'Great Vibes', cursive; /* 우아한 만년필 느낌 폰트 */
+    font-family: 'Great Vibes', cursive;
     font-size: 90px;
     color: rgba(20, 20, 20, 0.9);
     white-space: nowrap;
@@ -40,17 +44,11 @@ body {
     text-shadow: 0 2px 6px rgba(0,0,0,0.2);
 }
 
-/* 손글씨처럼 써지는 애니메이션 */
 @keyframes drawText {
-    from {
-        width: 0;
-    }
-    to {
-        width: 100%;
-    }
+    from { width: 0; }
+    to { width: 100%; }
 }
 
-/* 펜이 써나가는 듯한 부드러운 모션 */
 .handwritten-text {
     display: inline-block;
     white-space: nowrap;
@@ -70,6 +68,50 @@ body {
         clip-path: inset(0 0 0 0);
     }
 }
+
+/* ============================================
+   ▼ 새로운 안내 문구 스타일 (요청 반영)
+   ============================================ */
+.touch-guide {
+    position: absolute;
+    top: 8%;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: "Pretendard", sans-serif; /* 부드러운 폰트 적용 */
+    font-size: 32px;
+    font-weight: 600;
+    color: #ffffff;
+
+    /* 글자 전체에 자연스럽게 들어가는 외곽 테두리 느낌 */
+    text-shadow:
+        0 0 3px rgba(0,0,0,0.9),
+        0 0 6px rgba(0,0,0,0.7),
+        0 0 12px rgba(255,255,255,0.9), 
+        0 0 20px rgba(255,255,255,0.7);
+
+    opacity: 0;
+    animation: fadeInPulse 2s ease-out 5s forwards;
+    z-index: 10;
+}
+
+@keyframes fadeInPulse {
+    0% { opacity: 0; transform: translateX(-50%) scale(1); }
+    40% { opacity: 1; }
+    100% { opacity: 1; transform: translateX(-50%) scale(1); }
+}
+
+/* 부드러운 펄스 */
+.touch-guide {
+    animation: fadeInPulse 1.5s ease-out 5s forwards, pulse 2.2s ease-in-out 6.5s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: translateX(-50%) scale(1); }
+    50% { transform: translateX(-50%) scale(1.12); }
+    100% { transform: translateX(-50%) scale(1); }
+}
+/* ============================================ */
+
 
 /* --- 옷 배경 (기존 유지) --- */
 .clothing-container {
@@ -105,10 +147,9 @@ body {
     display: block;
     border: none;
     transform: scale(0.8);
-    transition: transform 0s; /* 초기 확대 방지 */
+    transition: transform 0s;
 }
 
-/* --- Row Animation --- */
 .row-1 { animation: slideRight 30s linear infinite; top: 0%; }
 .row-2 { animation: slideLeft 35s linear infinite; top: 25%; }
 .row-3 { animation: slideRight 32s linear infinite; top: 50%; }
@@ -172,6 +213,9 @@ body {
 <div class="title-container">
     <h1 class="handwritten-text">Style On You</h1>
 </div>
+
+<!-- 안내 문구 (업데이트됨) -->
+<div class="touch-guide">화면을 터치해주세요</div>
 
 </body>
 </html>
