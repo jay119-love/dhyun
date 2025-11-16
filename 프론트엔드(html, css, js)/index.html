@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Try On!</title>
+
+<!-- 부드러운 폰트: Pretendard -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+
+<style>
+/* --- Body --- */
+body { 
+    background: #ffffff; 
+    color: #333; 
+    text-align: center; 
+    font-family: "Noto Sans KR", sans-serif; 
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw; 
+    cursor: pointer; 
+}
+
+/* --- 문구 컨테이너 추가 --- */
+.title-container {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 5;
+}
+
+.handwritten-text {
+    font-family: 'Great Vibes', cursive;
+    font-size: 90px;
+    color: rgba(20, 20, 20, 0.9);
+    white-space: nowrap;
+    overflow: hidden;
+    border-right: none;
+    animation: drawText 4s ease forwards;
+    stroke-width: 1px;
+    text-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
+@keyframes drawText {
+    from { width: 0; }
+    to { width: 100%; }
+}
+
+.handwritten-text {
+    display: inline-block;
+    white-space: nowrap;
+    animation: handwriting 5s ease-out forwards;
+    border: none;
+}
+
+@keyframes handwriting {
+    0% {
+        opacity: 0;
+        clip-path: inset(0 100% 0 0);
+    }
+    10% {
+        opacity: 1;
+    }
+    100% {
+        clip-path: inset(0 0 0 0);
+    }
+}
+
+/* ============================================
+   ▼ 새로운 안내 문구 스타일 (요청 반영)
+   ============================================ */
+.touch-guide {
+    position: absolute;
+    top: 8%;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: "Pretendard", sans-serif; /* 부드러운 폰트 적용 */
+    font-size: 32px;
+    font-weight: 600;
+    color: #ffffff;
+
+    /* 글자 전체에 자연스럽게 들어가는 외곽 테두리 느낌 */
+    text-shadow:
+        0 0 3px rgba(0,0,0,0.9),
+        0 0 6px rgba(0,0,0,0.7),
+        0 0 12px rgba(255,255,255,0.9), 
+        0 0 20px rgba(255,255,255,0.7);
+
+    opacity: 0;
+    animation: fadeInPulse 2s ease-out 5s forwards;
+    z-index: 10;
+}
+
+@keyframes fadeInPulse {
+    0% { opacity: 0; transform: translateX(-50%) scale(1); }
+    40% { opacity: 1; }
+    100% { opacity: 1; transform: translateX(-50%) scale(1); }
+}
+
+/* 부드러운 펄스 */
+.touch-guide {
+    animation: fadeInPulse 1.5s ease-out 5s forwards, pulse 2.2s ease-in-out 6.5s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: translateX(-50%) scale(1); }
+    50% { transform: translateX(-50%) scale(1.12); }
+    100% { transform: translateX(-50%) scale(1); }
+}
+/* ============================================ */
+
+
+/* --- 옷 배경 (기존 유지) --- */
+.clothing-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%; 
+    width: 100%;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+.clothing-row {
+    display: flex;
+    gap: 2vw;
+    position: absolute;
+    left: 0;
+    width: max-content;
+}
+
+.clothing-item {
+    height: 25vh; 
+    min-width: 25vh;
+    display: block; 
+    background: #ffffff;
+    overflow: hidden;
+}
+
+.clothing-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+    border: none;
+    transform: scale(0.8);
+    transition: transform 0s;
+}
+
+.row-1 { animation: slideRight 30s linear infinite; top: 0%; }
+.row-2 { animation: slideLeft 35s linear infinite; top: 25%; }
+.row-3 { animation: slideRight 32s linear infinite; top: 50%; }
+.row-4 { animation: slideLeft 38s linear infinite; top: 75%; }
+
+@keyframes slideRight {
+    0% { transform: translateX(-50%); }
+    100% { transform: translateX(0); }
+}
+
+@keyframes slideLeft {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+}
+</style>
+</head>
+
+<body onclick="location.href='capture.html'">
+
+<!-- 옷 배경 -->
+<div class="clothing-container">
+    <div class="clothing-row row-1">
+        <div class="clothing-item"><img src="images/Clothes (1).jpg"></div>
+        <div class="clothing-item"><img src="images/Clothes (2).jpg"></div>
+        <div class="clothing-item"><img src="images/Clothes (3).jpg"></div>
+        <div class="clothing-item"><img src="images/Clothes (4).jpg"></div>
+        <div class="clothing-item"><img src="images/Clothes (5).jpg"></div>
+        <div class="clothing-item"><img src="images/Clothes (1).jpg"></div>
+        <div class="clothing-item"><img src="images/Clothes (2).jpg"></div>
+    </div>
+
+    <div class="clothing-row row-2">
+        <div class="clothing-item"><img src="images/Clothes (6).jpg"></div>
+        <div class="clothing-item"><img src="images/Clothes (7).jpg"></div>
+        <div class="clothing-item"><img src="images/Clothes (8).jpg"></div>
+        <div class="clothing-item"><img src="images/Clothes (9).jpg"></div>
+        <div class="clothing-item"><img src="images/Clothes (10).jpg"></div>
+        <div class="clothing-item"><img src="images/Clothes (6).jpg"></div>
+    </div>
+
+    <div class="clothing-row row-3">
+        <div class="clothing-item"><img src="images/Clothes (11).jpg"></div>
+        <div class="clothing-item"><img src="images/Clothes (12).jpg"></div>
+        <div class="clothing-item"><img src="images/Clothes (13).jpg"></div>
+        <div class="clothing-item"><img src="images/Clothes (14).jpg"></div>
+        <div class="clothing-item"><img src="images/Clothes (15).jpg"></div>
+        <div class="clothing-item"><img src="images/Clothes (11).jpg"></div>
+    </div>
+
+    <div class="clothing-row row-4">
+        <div class="clothing-item"><img src="images/Clothes (16).jpg"></div>
+        <div class="clothing-item"><img src="images/Clothes (17).jpg"></div>
+        <div class="clothing-item"><img src="images/Clothes (18).jpg"></div>
+        <div class="clothing-item"><img src="images/Clothes (19).jpg"></div>
+        <div class="clothing-item"><img src="images/Clothes (20).jpg"></div>
+        <div class="clothing-item"><img src="images/Clothes (16).jpg"></div>
+    </div>
+</div>
+
+<!-- 손글씨 텍스트 -->
+<div class="title-container">
+    <h1 class="handwritten-text">Style On You</h1>
+</div>
+
+<!-- 안내 문구 (업데이트됨) -->
+<div class="touch-guide">화면을 터치해주세요</div>
+
+</body>
+</html>
