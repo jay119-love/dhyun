@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Review</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+<style>html,body{margin:0;height:100%;background:#000;color:#fff;font-family:'Noto Sans KR',sans-serif}#reviewImg{width:100%;height:100%;object-fit:cover}</style>
+</head>
+<body>
+<img id="reviewImg" alt="촬영 이미지" />
+<div style="position:fixed;left:10px;bottom:20px"><button onclick="location.href='/capture'">다시 찍기</button></div>
+<div style="position:fixed;right:10px;bottom:20px"><button onclick="location.href='/select'">다음으로</button></div>
+<script>const stored=localStorage.getItem('capturedImage');if(stored){document.getElementById('reviewImg').src=stored}else{alert('사진이 없습니다.');location.href='/capture'}</script>
+</body>
+</html>

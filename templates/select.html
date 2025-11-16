@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Select Clothes</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+<style>body{margin:0;font-family:'Noto Sans KR',sans-serif;background:#000;color:#fff}.top-photo-area{height:60vh;background:#000;background-size:cover;background-position:center}.clothes-row{height:20%;display:flex;align-items:center;padding:12px}.clothes-img{height:90%;margin-right:16px;cursor:pointer;border-radius:12px}</style>
+</head>
+<body>
+<button style="position:fixed;right:16px;bottom:24px" id="tryonBtn">착용하기</button>
+<div class="top-photo-area"></div>
+<div class="clothes-row"><div style="width:70px">상의</div><div id="tops-row" style="display:flex;overflow:auto;padding:8px"></div></div>
+<div class="clothes-row"><div style="width:70px">하의</div><div id="bottoms-row" style="display:flex;overflow:auto;padding:8px"></div></div>
+<script>
+const savedImage = localStorage.getItem('capturedImage');
+if(!savedImage){alert('사진이 없습니다');location.href='/capture'}else{document.querySelector('.top-photo-area').style.backgroundImage=`url('${savedImage}')`}
+// populate tops/bottoms from static folder listing is not possible in static html; use a few placeholders
+const tops=['/static/tops/top1.png','/static/tops/top2.png','/static/tops/top3.png','/static/tops/top4.png'];
+const bottoms=['/static/bottoms/bottom1.png','/static/bottoms/bottom2.png','/static/bottoms/bottom3.png','/static/bottoms/bottom4.png'];
+const topsRow=document.getElementById('tops-row'), bottomsRow=document.getElementById('bottoms-row');
+for(const t of tops){const img=document.createElement('img');img.src=t;img.className='clothes-img';img.dataset.type='top';topsRow.appendChild(img)}
+for(const b of bottoms){const img=document.createElement('img');img.src=b;img.className='clothes-img';img.dataset.type='bottom';bottomsRow.appendChild(img)}
+let selectedTop=null, selectedBottom=null;document.addEventListener('click',e=>{const el=e.target; if(el.classList && el.classList.contains('clothes-img')){if(el.dataset.type==='top'){if(selectedTop)selectedTop.classList.remove('selected');selectedTop=el;el.classList.add('selected')}else{if(selectedBottom)selectedBottom.classList.remove('selected');selectedBottom=el;el.classList.add('selected')}}})
+
+document.getElementById('tryonBtn').addEventListener('click',()=>{
+  const topSrc = selectedTop?selectedTop.src:null;
+  const bottomSrc = selectedBottom?selectedBottom.src:null;
+  let mode='top'; if(topSrc&&bottomSrc)mode='both'; else if(bottomSrc)mode='bottom';
+  const loadingUrl = `/loading?top=${encodeURIComponent(topSrc||'')}&bottom=${encodeURIComponent(bottomSrc||'')}&mode=${mode}`;
+  location.href = loadingUrl;
+});
+</script>
+</body>
+</html>

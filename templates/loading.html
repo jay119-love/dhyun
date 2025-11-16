@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>로딩 중...</title>
+<style>body{margin:0;padding:0;width:100vw;height:100vh;background:#000;color:#fff;display:flex;flex-direction:column;justify-content:center;align-items:center;font-family:'Noto Sans KR',sans-serif}.loading-text{font-size:28px;margin-bottom:24px}.spinner{width:60px;height:60px;border:4px solid rgba(255,255,255,0.2);border-top:4px solid rgba(255,255,255,0.9);border-radius:50%;animation:spin 1s linear infinite}@keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}</style>
+</head>
+<body>
+<div class="loading-text">당신의 스타일을 완성중이에요!</div>
+<div class="spinner"></div>
+<script>
+async function processTryon(){
+  const urlParams = new URLSearchParams(window.location.search);
+  const top = urlParams.get('top');
+  const bottom = urlParams.get('bottom');
+  const mode = urlParams.get('mode');
+
+  const savedImage = localStorage.getItem('capturedImage');
+  if(!savedImage){alert('사진이 없습니다.');location.href='/capture';return}
+
+  try{
+    // upload
+    const uploadRes = await fetch('/upload',{method:'POST',headers: {'Content-Type':'application/json'},body: JSON.stringify({image: savedImage})});
+    const uploadData = await uploadRes.json();
+    if(!uploadData.success){alert('업로드 실패');location.href='/select';return}
+
+    // start tryon -> returns job_id
+    const tryonRes = await fetch('/tryon',{method:'POST',headers:{'Content-Type':'application/json'},body: JSON.stringify({top,bottom,mode})});
+    const tryonData = await tryonRes.json();
+    if(tryonData.job_id){
+      // poll status
+      const jobId = tryonData.job_id;
+      while(true){
+        await new Promise(r=>setTimeout(r,2000));
+        const st = await fetch(`/status/${jobId}`);
+        const stj = await st.json();
+        if(stj.status==='completed'){
+          const image = stj.result;
+          window.location.href = `/result?image=${encodeURIComponent(image)}`;
+          return;
+        } else if(stj.status==='failed'){
+          alert('합성 실패: '+(stj.error||''));
+          window.location.href = '/select';
+          return;
+        }
+      }
+    } else {
+      alert('Try-on 요청 실패'); location.href='/select';
+    }
+  }catch(e){console.error(e);alert('처리 중 오류가 발생했습니다.');location.href='/select'}
+}
+window.addEventListener('DOMContentLoaded', processTryon);
+</script>
+</body>
+</html>
