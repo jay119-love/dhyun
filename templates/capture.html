@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover" />
+<title>Capture</title>
+<style>
+:root{--shutter: 56px;--gap-bottom: 14px;--gap-top: 8px;--line-h: 1px;}
+.screen-on{position: fixed;inset: 0;background: #000;z-index: 9999;animation: screenFadeIn 0.7s ease-out forwards;pointer-events: none;}
+@keyframes screenFadeIn{0%{opacity:1;filter: brightness(0);} 100%{opacity:0;filter: brightness(1);}}
+html,body{margin:0;height:100%;background:#000;color:#fff;overflow:hidden;font-family:system-ui,-apple-system,Segoe UI,Roboto,'Noto Sans KR',sans-serif}
+.preview{position:fixed;inset:0;overflow:hidden;background:#000}
+#camera{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+.voice-guide{position:absolute;top:18%;left:50%;transform:translateX(-50%);padding:10px 22px;font-size:28px;font-weight:700;text-align:center;color:rgba(255,255,255,0.85);background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.28);border-radius:14px;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);box-shadow:0 0 16px rgba(255,255,255,0.22),0 0 34px rgba(255,255,255,0.12),inset 0 0 6px rgba(255,255,255,0.25);animation:pulseGlow 3.2s ease-in-out infinite;}
+@keyframes pulseGlow{0%{transform:translateX(-50%) scale(1);box-shadow:0 0 14px rgba(255,255,255,0.18),0 0 28px rgba(255,255,255,0.08),inset 0 0 5px rgba(255,255,255,0.22);} 50%{transform:translateX(-50%) scale(1.07);box-shadow:0 0 22px rgba(255,255,255,0.55),0 0 40px rgba(255,255,255,0.28),inset 0 0 12px rgba(255,255,255,0.35);} 100%{transform:translateX(-50%) scale(1);box-shadow:0 0 14px rgba(255,255,255,0.18),0 0 28px rgba(255,255,255,0.08),inset 0 0 5px rgba(255,255,255,0.22);}}
+.controls{position:absolute;left:0;right:0;bottom:0;height: calc(var(--line-h) + var(--gap-top) + var(--shutter) + var(--gap-bottom) + env(safe-area-inset-bottom));display:flex;align-items:flex-end;justify-content:center;background:rgba(255,255,255,0.03);backdrop-filter:blur(10px);border-top:1px solid rgba(255,255,255,0.45);box-shadow:0 -2px 10px rgba(255,255,255,0.20),0 -4px 18px rgba(255,255,255,0.12),inset 0 1px 6px rgba(255,255,255,0.15);padding-bottom:calc(env(safe-area-inset-bottom) + var(--gap-bottom));z-index:2;}
+.controls::before{content:"";position:absolute;left:0;right:0;top:0;height:var(--line-h);background:linear-gradient(90deg,transparent,rgba(255,255,255,0.6),transparent);}
+.shutter{position:relative;width:var(--shutter);height:var(--shutter);border-radius:50%;background:rgba(255,255,255,0.08);border:2px solid rgba(255,255,255,0.85);box-shadow:0 0 12px rgba(255,255,255,0.55),0 0 26px rgba(255,255,255,0.22),inset 0 0 14px rgba(255,255,255,0.22);cursor:pointer;backdrop-filter:blur(6px);outline:none;-webkit-tap-highlight-color:transparent;}
+.shutter::after{content:"";position:absolute; inset:5px;border-radius:50%;background:rgba(255,255,255,0.05);border:1.8px solid rgba(255,255,255,0.55);box-shadow:inset 0 0 12px rgba(255,255,255,0.25),inset 0 0 22px rgba(255,255,255,0.20);transition:box-shadow 0.25s ease, background 0.25s ease;}
+.shutter.inner-glow::after{animation:innerPulse 0.6s ease-out;}
+@keyframes innerPulse{0%{box-shadow: inset 0 0 12px rgba(255,255,255,.25), 0 0 0 0 rgba(255,255,255,0);background:rgba(255,255,255,.18);} 50%{box-shadow: inset 0 0 24px rgba(255,255,255,.95), 0 0 22px 10px rgba(255,255,255,.45);background:rgba(255,255,255,.30);} 100%{box-shadow: inset 0 0 12px rgba(255,255,255,.25), 0 0 0 0 rgba(255,255,255,0);background:rgba(255,255,255,.10);}}
+.shutter:active{ transform:scale(0.96) }
+canvas{ display:none }
+.msg{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,.6);padding:12px 16px;border-radius:10px;border:1px solid rgba(255,255,255,0.7);box-shadow:0 0 10px rgba(255,255,255,.4);display:none;z-index:3;text-align:center;font-size:24px;font-weight:700;}
+.msg.show{ display:block }
+.countdown-timer{position:absolute;left:50%; top:50%;transform:translate(-50%,-50%);width: 180px;height: 180px;z-index: 3;display:none;pointer-events: none;}
+.countdown-timer.show{display:block;}
+.timer-svg{width:100%; height:100%;transform: rotate(-90deg);filter:drop-shadow(0 0 8px rgba(255,255,255,0.75)) drop-shadow(0 0 16px rgba(255,255,255,0.35));}
+.timer-track, .timer-progress{fill:none;stroke-linecap: round;}
+.timer-track{stroke: rgba(255,255,255,0.15);stroke-width: 10px;}
+.timer-progress{stroke: rgba(255,255,255,0.9);stroke-width: 10px;stroke-dasharray: 282.74;stroke-dashoffset: 282.74;transition: stroke-dashoffset 0.2s ease-in-out;}
+.countdown-timer.step-1 .timer-progress{ stroke-dashoffset: 188.49; }
+.countdown-timer.step-2 .timer-progress{ stroke-dashoffset: 94.245; }
+.countdown-timer.step-3 .timer-progress{ stroke-dashoffset: 0; }
+.countdown-timer.snap .timer-svg{animation: snapPulse 0.4s ease-out;}
+@keyframes snapPulse{0%{ transform: rotate(-90deg) scale(1); } 50%{ transform: rotate(-90deg) scale(1.15); opacity: 0.9; } 100%{ transform: rotate(-90deg) scale(1); }}
+</style>
+</head>
+
+<body>
+
+<div class="screen-on"></div>
+
+<div class="preview">
+    <video id="camera" autoplay playsinline muted></video>
+
+    <div class="voice-guide">촬영이라고 말해주세요</div>
+
+    <div id="message" class="msg">카메라 권한을 허용해주세요.</div>
+
+    <div class="countdown-timer" id="countdownTimer">
+        <svg class="timer-svg" viewBox="0 0 100 100">
+            <circle class="timer-track" cx="50" cy="50" r="45"></circle>
+            <circle class="timer-progress" cx="50" cy="50" r="45"></circle>
+        </svg>
+    </div>
+
+    <div class="controls">
+        <button class="shutter" id="shutterBtn" aria-label="촬영"></button>
+    </div>
+</div>
+
+<canvas id="snapshot"></canvas>
+
+<script>
+const video = document.getElementById('camera');
+const snapCanvas = document.getElementById('snapshot');
+const msg = document.getElementById('message');
+const shutterBtn = document.getElementById('shutterBtn');
+const countdownTimer = document.getElementById('countdownTimer');
+const screenOn = document.querySelector(".screen-on");
+
+let counting = false;
+
+screenOn.addEventListener("animationend", () => {
+    screenOn.remove();
+});
+
+async function startCamera(){
+    try{
+        const stream = await navigator.mediaDevices.getUserMedia({
+            video:{ facingMode:"user" },
+            audio:false
+        });
+        video.srcObject = stream;
+        msg.classList.remove("show");
+    }catch(e){
+        msg.textContent = "카메라 권한을 허용해주세요.";
+        msg.classList.add("show");
+    }
+}
+
+function sleep(ms){ return new Promise(r=>setTimeout(r, ms)); }
+
+function sendToReview(){
+    const w = video.videoWidth, h = video.videoHeight;
+    snapCanvas.width = w;
+    snapCanvas.height = h;
+
+    const ctx = snapCanvas.getContext("2d");
+
+    ctx.save();
+    ctx.translate(w,0);
+    ctx.scale(-1,1);
+    ctx.drawImage(video,0,0,w,h);
+    ctx.restore();
+
+    const imgData = snapCanvas.toDataURL("image/jpeg", 0.92);
+    localStorage.setItem("capturedImage", imgData);
+
+    window.location.href = "/review";
+}
+
+window.addEventListener("load", startCamera);
+
+// [뷔페] TTS 재생 함수 (미리 만든 MP3 재생)
+const audioMap = {
+    // ◀◀◀ 뷔페 맵. 'nova'로 고정 (맘에 안들면 shimmer, alloy 등으로 바꾸세요)
+    "안녕하세요~ 시작이라고 말하시거나 화면터치해주세요!": "/static/audio/nova/welcome.mp3",
+    "촬영이라고 말해주세요": "/static/audio/nova/capture_prompt.mp3",
+    "3, 2, 1, 치즈~": "/static/audio/nova/capture_countdown.mp3",
+    "와 잘 나오셨어요! 다시한번 찍을까요? 아님 넘어갈까요?": "/static/audio/nova/review_prompt.mp3",
+    "어떤 조합을 입어볼까요?": "/static/audio/nova/select_prompt.mp3",
+    "상의 또는 하의를 선택해주세요.": "/static/audio/nova/select_error.mp3",
+    "당신의 스타일을 완성중이에요!": "/static/audio/nova/loading_1.mp3",
+    "잠시만 기다려주세요~": "/static/audio/nova/loading_2.mp3",
+    "와~ 멋진데요?": "/static/audio/nova/result_prompt.mp3"
+};
+
+async function playTTS(text) {
+    if (window.currentAudio) {
+        window.currentAudio.pause();
+    }
+    const audioUrl = audioMap[text];
+    if (audioUrl) {
+        const audio = new Audio(`${audioUrl}?v=${new Date().getTime()}`);
+        window.currentAudio = audio;
+        audio.play();
+    } else {
+        console.warn(`재생할 MP3 파일이 없습니다: ${text}`);
+    }
+}
+
+// 촬영 버튼 클릭 시 카운트다운과 함께 TTS 재생
+shutterBtn.onclick = async () => {
+    if(counting) return;
+    counting = true;
+    shutterBtn.disabled = true;
+
+    shutterBtn.classList.remove("inner-glow");
+    void shutterBtn.offsetWidth;
+    shutterBtn.classList.add("inner-glow");
+
+    countdownTimer.classList.add("show");
+
+    // "321 치즈~" TTS 즉시 재생 (기다리지 않음)
+    playTTS("3, 2, 1, 치즈~");
+
+    await sleep(1000);
+    countdownTimer.classList.add("step-1");
+
+    await sleep(1000);
+    countdownTimer.classList.add("step-2");
+
+    await sleep(1000);
+    countdownTimer.classList.add("step-3");
+
+    shutterBtn.classList.remove("inner-glow");
+    void shutterBtn.offsetWidth;
+    shutterBtn.classList.add("inner-glow");
+    countdownTimer.classList.add("snap");
+
+    await sleep(500);
+
+    sendToReview();
+
+    countdownTimer.classList.remove("show", "step-1", "step-2", "step-3", "snap");
+    shutterBtn.disabled = false;
+    counting = false;
+};
+
+// 음성 인식 기능 추가
+window.addEventListener("DOMContentLoaded", () => {
+    
+    // [뷔페] 페이지 로드 시 안내 음성 재생
+    playTTS("촬영이라고 말해주세요");
+    
+    let recognition = null;
+    let isListening = false;
+
+    // Web Speech API 지원 확인
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        recognition = new SpeechRecognition();
+        recognition.lang = 'ko-KR';
+        recognition.continuous = true;
+        recognition.interimResults = false;
+
+        recognition.onresult = async function(event) {
+            const transcript = event.results[event.results.length - 1][0].transcript.trim();
+            console.log("음성인식 결과:", transcript);
+
+            if (transcript.includes("촬영") || transcript.includes("사진") || transcript.includes("찍")) {
+                if (!counting) {
+                    // 음성으로 촬영 시 STT 중지
+                    if (recognition && isListening) { recognition.abort(); isListening = false; }
+                    shutterBtn.click();
+                }
+            }
+        };
+
+        recognition.onerror = function(event) {
+            console.error("음성인식 오류:", event.error);
+            if (event.error !== 'no-speech' && event.error !== 'aborted') {
+                setTimeout(() => {
+                    if (!isListening) {
+                        try { recognition.start(); isListening = true; } catch (e) {}
+                    }
+                }, 1000);
+            }
+        };
+
+        recognition.onend = function() {
+            isListening = false;
+            // 페이지가 이동하지 않는 한 (즉, /capture에 머무는 한)
+            if (window.location.pathname === "/capture" && !counting) { // ◀◀ counting 아닐 때만 재시작
+                setTimeout(() => {
+                    if (!isListening) {
+                        try { recognition.start(); isListening = true; } catch (e) {}
+                    }
+                }, 500);
+            }
+        };
+
+        // 카메라가 시작되면 음성 인식도 시작
+        setTimeout(() => {
+            try {
+                if (!isListening) {
+                    recognition.start();
+                    isListening = true;
+                    console.log("음성 인식 시작");
+                }
+            } catch (err) {
+                console.log("음성 인식 시작 실패:", err);
+            }
+        }, 2000);
+        
+        // 페이지 나갈 때 STT 끄기
+        window.addEventListener("beforeunload", () => {
+             if (recognition && isListening) {
+                recognition.abort();
+                isListening = false;
+             }
+        });
+        
+    } else {
+        console.warn("이 브라우저는 Web Speech API를 지원하지 않습니다.");
+    }
+});
+</script>
+
+</body>
+</html>

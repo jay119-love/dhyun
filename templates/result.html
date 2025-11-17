@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>착용 결과</title>
+<style>
+body { 
+    background:#000; 
+    color:white; 
+    text-align:center; 
+    font-family:"Noto Sans KR", sans-serif; 
+    margin:0;
+    padding:0;
+}
+h1 { 
+    color:#0ff; 
+    text-shadow:0 0 5px #0ff,0 0 10px #0ff; 
+    margin-top:20px; 
+}
+img { 
+    width:80%;         /* 스마트미러 세로 화면에 맞춤 */
+    max-width:600px;     /* 최대 크기 제한 */
+    margin-top:20px; 
+    border-radius:10px; 
+    box-shadow:0 0 15px #0ff, 0 0 25px #0ff, 0 0 35px #0ff; /* 야광 테두리 */
+}
+button { 
+    margin:20px; 
+    padding:10px 20px; 
+    cursor:pointer; 
+    font-size:16px; 
+    border:none; 
+    border-radius:8px; 
+    background:#111; 
+    color:#0ff; 
+}
+</style>
+</head>
+<body>
+<h1>착용 결과</h1>
+<img src="{{ result_image }}">
+<br>
+<button onclick="location.href='/'">다시 시도</button>
+
+<script>
+// [뷔페] TTS 재생 함수 (미리 만든 MP3 재생)
+const audioMap = {
+    // ◀◀◀ 뷔페 맵. 'nova'로 고정 (맘에 안들면 shimmer, alloy 등으로 바꾸세요)
+    "안녕하세요~ 시작이라고 말하시거나 화면터치해주세요!": "/static/audio/nova/welcome.mp3",
+    "촬영이라고 말해주세요": "/static/audio/nova/capture_prompt.mp3",
+    "3, 2, 1, 치즈~": "/static/audio/nova/capture_countdown.mp3",
+    "와 잘 나오셨어요! 다시한번 찍을까요? 아님 넘어갈까요?": "/static/audio/nova/review_prompt.mp3",
+    "어떤 조합을 입어볼까요?": "/static/audio/nova/select_prompt.mp3",
+    "상의 또는 하의를 선택해주세요.": "/static/audio/nova/select_error.mp3",
+    "당신의 스타일을 완성중이에요!": "/static/audio/nova/loading_1.mp3",
+    "잠시만 기다려주세요~": "/static/audio/nova/loading_2.mp3",
+    "와~ 멋진데요?": "/static/audio/nova/result_prompt.mp3"
+};
+
+async function playTTS(text) {
+    if (window.currentAudio) {
+        window.currentAudio.pause();
+    }
+    const audioUrl = audioMap[text];
+    if (audioUrl) {
+        const audio = new Audio(`${audioUrl}?v=${new Date().getTime()}`);
+        window.currentAudio = audio;
+        audio.play();
+    } else {
+        console.warn(`재생할 MP3 파일이 없습니다: ${text}`);
+    }
+}
+
+window.addEventListener("DOMContentLoaded", () => {
+    playTTS("와~ 멋진데요?");
+});
+</script>
+</body>
+</html>

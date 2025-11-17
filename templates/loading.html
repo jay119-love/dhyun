@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>로딩 중...</title>
+<style>
+body {
+    margin: 0;
+    padding: 0;
+    width: 100vw;
+    height: 100vh;
+    background: #000;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    font-family: "Noto Sans KR", sans-serif;
+}
+.loading-text {
+    font-size: 32px;
+    font-weight: 600;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.9);
+    text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+    margin-bottom: 40px;
+}
+.spinner {
+    width: 60px;
+    height: 60px;
+    border: 4px solid rgba(255, 255, 255, 0.2);
+    border-top: 4px solid rgba(255, 255, 255, 0.9);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+</style>
+</head>
+<body>
+<div class="loading-text">당신의 스타일을 완성중이에요!</div>
+<div class="spinner"></div>
+
+<script>
+// [뷔페] TTS 재생 함수 (미리 만든 MP3 재생)
+const audioMap = {
+    // ◀◀◀ 뷔페 맵. 'nova'로 고정 (맘에 안들면 shimmer, alloy 등으로 바꾸세요)
+    "안녕하세요~ 시작이라고 말하시거나 화면터치해주세요!": "/static/audio/nova/welcome.mp3",
+    "촬영이라고 말해주세요": "/static/audio/nova/capture_prompt.mp3",
+    "3, 2, 1, 치즈~": "/static/audio/nova/capture_countdown.mp3",
+    "와 잘 나오셨어요! 다시한번 찍을까요? 아님 넘어갈까요?": "/static/audio/nova/review_prompt.mp3",
+    "어떤 조합을 입어볼까요?": "/static/audio/nova/select_prompt.mp3",
+    "상의 또는 하의를 선택해주세요.": "/static/audio/nova/select_error.mp3",
+    "당신의 스타일을 완성중이에요!": "/static/audio/nova/loading_1.mp3",
+    "잠시만 기다려주세요~": "/static/audio/nova/loading_2.mp3",
+    "와~ 멋진데요?": "/static/audio/nova/result_prompt.mp3"
+};
+
+async function playTTS(text) {
+    if (window.currentAudio) {
+        window.currentAudio.pause();
+    }
+    const audioUrl = audioMap[text];
+    if (audioUrl) {
+        const audio = new Audio(`${audioUrl}?v=${new Date().getTime()}`);
+        window.currentAudio = audio;
+        audio.play();
+    } else {
+        console.warn(`재생할 MP3 파일이 없습니다: ${text}`);
+    }
+}
+
+// URL 파라미터에서 옷 정보 가져오기
+const urlParams = new URLSearchParams(window.location.search);
+const top = urlParams.get('top');
+const bottom = urlParams.get('bottom');
+const mode = urlParams.get('mode');
+
+async function processTryon() {
+    // 첫 번째 메시지 즉시 재생
+    playTTS("당신의 스타일을 완성중이에요!");
+    
+    // 잠시 대기 후 두 번째 메시지
+    setTimeout(() => {
+        playTTS("잠시만 기다려주세요~");
+    }, 2000);
+    
+    // 사용자 이미지 업로드
+    const savedImage = localStorage.getItem("capturedImage");
+    if (!savedImage) {
+        alert("사진이 없습니다.");
+        window.location.href = "/capture";
+        return;
+    }
+    
+    try {
+        // 이미지 업로드
+        const uploadRes = await fetch("/upload", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ image: savedImage })
+        });
+        const uploadData = await uploadRes.json();
+        
+        if (!uploadData.success) {
+            alert("이미지 업로드에 실패했습니다.");
+            window.location.href = "/select";
+            return;
+        }
+        
+        // Try-on API 호출
+        const tryonRes = await fetch("/tryon", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ top, bottom, mode })
+        });
+        
+        const tryonData = await tryonRes.json();
+        
+        if (tryonData.error) {
+            alert(tryonData.error);
+            window.location.href = "/select";
+            return;
+        }
+        
+        if (tryonData.result) {
+            // 결과 화면으로 이동
+            window.location.href = `/result?image=${encodeURIComponent(tryonData.result)}`;
+        } else {
+            alert("합성에 실패했습니다.");
+            window.location.href = "/select";
+        }
+    } catch (e) {
+        console.error("처리 실패:", e);
+        alert("처리 중 오류가 발생했습니다.");
+        window.location.href = "/select";
+    }
+}
+
+window.addEventListener("DOMContentLoaded", () => {
+    processTryon();
+});
+</script>
+</body>
+</html>

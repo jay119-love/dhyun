@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover" />
+<title>Review</title>
+<style>
+:root{--gap-bottom: 14px;--gap-top: 12px;--line-h: 1px;--btn-h: 58px;--btn-radius: 18px;--glass-bg: rgba(255,255,255,0.06);--glass-border: rgba(255,255,255,0.28);--glass-inner: rgba(255,255,255,0.18);}
+html,body{margin:0;height:100%;background:#000;color:#fff;overflow:hidden;font-family:system-ui,-apple-system,Segoe UI,Roboto,'Noto Sans KR',sans-serif;}
+.preview-area{position:fixed;inset:0;overflow:hidden;background:#000;}
+#reviewImg{position:absolute;inset:0;width:100%; height:100%;object-fit:cover;}
+.controls{position:absolute;left:0;right:0;bottom:0;height: calc(var(--line-h) + var(--gap-top) + var(--btn-h) + var(--gap-bottom) + env(safe-area-inset-bottom));display:flex;align-items:flex-end;justify-content:space-between;padding:0 26px;padding-bottom:calc(env(safe-area-inset-bottom) + var(--gap-bottom));background:rgba(255,255,255,0.03);backdrop-filter:blur(10px);border-top:1px solid rgba(255,255,255,0.45);box-shadow:0 -2px 10px rgba(255,255,255,0.20),0 -4px 18px rgba(255,255,255,0.12),inset 0 1px 6px rgba(255,255,255,0.15);z-index:10;}
+.controls::before{content:"";position:absolute;left:0;right:0;top:0;height:var(--line-h);background:linear-gradient(90deg,transparent,rgba(255,255,255,0.6),transparent);}
+.ctrl-btn{height:var(--btn-h);min-width:120px;padding:0 26px;border-radius:var(--btn-radius);display:flex;align-items:center;justify-content:center;border:1.8px solid var(--glass-border);background:var(--glass-bg);color:rgba(255,255,255,0.9);font-size:22px;font-weight:600;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);box-shadow:0 0 12px rgba(255,255,255,0.45),0 0 24px rgba(255,255,255,0.18),inset 0 0 14px rgba(255,255,255,0.25);cursor:pointer;transition:transform 0.2s ease,box-shadow 0.25s ease,background 0.25s ease;}
+.ctrl-btn:active{transform:scale(0.96);box-shadow:0 0 8px rgba(255,255,255,0.35),0 0 16px rgba(255,255,255,0.15),inset 0 0 10px rgba(255,255,255,0.35);}
+</style>
+</head>
+
+<body>
+
+<div class="preview-area">
+    <img id="reviewImg" alt="촬영 이미지" />
+</div>
+
+<div class="controls">
+    <button id="retryBtn" class="ctrl-btn">다시 찍기</button>
+    <button id="nextBtn" class="ctrl-btn">다음으로</button>
+</div>
+
+<script>
+// [뷔페] TTS 재생 함수 (미리 만든 MP3 재생)
+const audioMap = {
+    // ◀◀◀ 뷔페 맵. 'nova'로 고정 (맘에 안들면 shimmer, alloy 등으로 바꾸세요)
+    "안녕하세요~ 시작이라고 말하시거나 화면터치해주세요!": "/static/audio/nova/welcome.mp3",
+    "촬영이라고 말해주세요": "/static/audio/nova/capture_prompt.mp3",
+    "3, 2, 1, 치즈~": "/static/audio/nova/capture_countdown.mp3",
+    "와 잘 나오셨어요! 다시한번 찍을까요? 아님 넘어갈까요?": "/static/audio/nova/review_prompt.mp3",
+    "어떤 조합을 입어볼까요?": "/static/audio/nova/select_prompt.mp3",
+    "상의 또는 하의를 선택해주세요.": "/static/audio/nova/select_error.mp3",
+    "당신의 스타일을 완성중이에요!": "/static/audio/nova/loading_1.mp3",
+    "잠시만 기다려주세요~": "/static/audio/nova/loading_2.mp3",
+    "와~ 멋진데요?": "/static/audio/nova/result_prompt.mp3"
+};
+
+async function playTTS(text) {
+    if (window.currentAudio) {
+        window.currentAudio.pause();
+    }
+    const audioUrl = audioMap[text];
+    if (audioUrl) {
+        const audio = new Audio(`${audioUrl}?v=${new Date().getTime()}`);
+        window.currentAudio = audio;
+        audio.play();
+    } else {
+        console.warn(`재생할 MP3 파일이 없습니다: ${text}`);
+    }
+}
+
+const reviewImg = document.getElementById("reviewImg");
+const retryBtn = document.getElementById("retryBtn");
+const nextBtn = document.getElementById("nextBtn");
+
+const stored = localStorage.getItem("capturedImage");
+if(stored){
+    reviewImg.src = stored;
+}
+
+retryBtn.onclick = () => {
+    window.location.href = "/capture";
+};
+
+nextBtn.onclick = () => {
+    window.location.href = "/select";
+};
+
+// 음성 인식 및 TTS 기능
+window.addEventListener("DOMContentLoaded", () => {
+    playTTS("와 잘 나오셨어요! 다시한번 찍을까요? 아님 넘어갈까요?");
+    
+    let recognition = null;
+    let isListening = false;
+
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        recognition = new SpeechRecognition();
+        recognition.lang = 'ko-KR';
+        recognition.continuous = true;
+        recognition.interimResults = false;
+
+        recognition.onresult = async function(event) {
+            const transcript = event.results[event.results.length - 1][0].transcript.trim();
+            console.log("음성인식 결과:", transcript);
+
+            if (transcript.includes("다시") || transcript.includes("이전")) {
+                if (recognition && isListening) { recognition.abort(); isListening = false; }
+                retryBtn.click();
+            } else if (transcript.includes("다음") || transcript.includes("넥스트") || transcript.includes("넘어")) {
+                if (recognition && isListening) { recognition.abort(); isListening = false; }
+                nextBtn.click();
+            }
+        };
+
+        recognition.onerror = function(event) {
+            console.error("음성인식 오류:", event.error);
+            if (event.error !== 'no-speech' && event.error !== 'aborted') {
+                setTimeout(() => {
+                    if (!isListening) {
+                        try { recognition.start(); isListening = true; } catch (e) {}
+                    }
+                }, 1000);
+            }
+        };
+
+        recognition.onend = function() {
+            isListening = false;
+            if (window.location.pathname === "/review") {
+                setTimeout(() => {
+                    if (!isListening) {
+                        try { recognition.start(); isListening = true; } catch (e) {}
+                    }
+                }, 500);
+            }
+        };
+
+        setTimeout(() => {
+            try {
+                if (!isListening) {
+                    recognition.start();
+                    isListening = true;
+                }
+            } catch (err) {
+                console.log("음성 인식 시작 실패:", err);
+            }
+        }, 1000);
+        
+        // 페이지 나갈 때 STT 끄기
+        window.addEventListener("beforeunload", () => {
+             if (recognition && isListening) {
+                recognition.abort();
+                isListening = false;
+             }
+        });
+        
+    } else {
+        console.warn("이 브라우저는 Web Speech API를 지원하지 않습니다.");
+    }
+});
+</script>
+
+</body>
+</html>
